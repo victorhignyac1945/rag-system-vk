@@ -86,6 +86,9 @@ class StatsOut(BaseModel):
     sources: int
     documents: int
     updated_at: datetime | None = None
+    index_version: str | None = None
+    index_built_at: datetime | None = None
+    ollama_ok: bool = False
 
 
 class HealthOut(BaseModel):

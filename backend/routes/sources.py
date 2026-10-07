@@ -161,6 +161,14 @@ async def add_source(
         source.id, docs_added, total_chunks,
     )
 
+    # Перестраиваем индекс
+    if total_chunks > 0:
+        try:
+            from backend.state import rebuild_index
+            await rebuild_index()
+        except Exception as e:
+            logger.error("Failed to rebuild index: %s", e)
+
     return SourceAddResponse(
         source_id=source.id,
         documents=docs_added,

@@ -1,6 +1,6 @@
 """ORM модели: Source, Document, Chunk."""
 from datetime import datetime
-from sqlalchemy import ForeignKey, JSON, String, Index
+from sqlalchemy import ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db import Base
@@ -27,9 +27,6 @@ class Source(Base):
 
 class Document(Base):
     __tablename__ = "documents"
-    __table_args__ = (
-        Index("ix_documents_text_hash", "text_hash"),
-    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     source_id: Mapped[int] = mapped_column(
@@ -53,9 +50,6 @@ class Document(Base):
 
 class Chunk(Base):
     __tablename__ = "chunks"
-    __table_args__ = (
-        Index("ix_chunks_document_id", "document_id"),
-    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     document_id: Mapped[int] = mapped_column(

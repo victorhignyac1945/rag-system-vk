@@ -1,6 +1,5 @@
 """Роуты: /api/health, /api/stats."""
 import logging
-from datetime import datetime
 
 import httpx
 from fastapi import APIRouter, Depends
@@ -10,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db import get_session
 from backend.models import Source, Document, Chunk
 from backend.schemas import HealthOut, StatsOut
-from backend.config import OLLAMA_BASE_URL
+from backend.config import OLLAMA_URL
+from backend.state import get_state
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ async def health(session: AsyncSession = Depends(get_session)) -> HealthOut:
     ollama_ok = False
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            resp = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
+            resp = await client.get(f"{OLLAMA_URL}/api/tags")
             ollama_ok = resp.status_code == 200
     except Exception as e:
         logger.warning("Ollama health check failed: %s", e)
@@ -60,9 +60,26 @@ async def stats(session: AsyncSession = Depends(get_session)) -> StatsOut:
 
     updated_at = last_source.created_at if last_source else None
 
+    # Получаем состояние индекса
+    state = await get_state()
+    index_version = state.index_version
+    index_built_at = state.index_built_at
+
+    # Проверяем Ollama
+    ollama_ok = False
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(f"{OLLAMA_URL}/api/tags")
+            ollama_ok = resp.status_code == 200
+    except Exception as e:
+        logger.warning("Ollama stats check failed: %s", e)
+
     return StatsOut(
         chunks=chunks_count,
         sources=sources_count,
         documents=documents_count,
         updated_at=updated_at,
+        index_version=index_version,
+        index_built_at=index_built_at,
+        ollama_ok=ollama_ok,
     )
